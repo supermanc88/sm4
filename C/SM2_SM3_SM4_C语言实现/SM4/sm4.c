@@ -53,8 +53,7 @@
 // cypher: 59 52 98 c7 c6 fd 27 1f 04 02 f8 04 c3 3d 3f 66
 
 #include "sm4.h"
-#include <string.h>
-#include <stdio.h>
+#include <linux/string.h>
 
 /*
  * 32-bit integer manipulation macros (big endian)
@@ -90,7 +89,8 @@
 
 /*
  * Expanded SM4 S-boxes
- /* Sbox table: 8bits input convert to 8 bits output*/
+ * Sbox table: 8bits input convert to 8 bits output
+ */
  
 static const unsigned char SboxTable[16][16] = 
 {
@@ -308,16 +308,19 @@ void sm4_crypt_cbc( sm4_context *ctx,
 {
     int i;
     unsigned char temp[16];
+    unsigned char temp_iv[16];
+
+    memcpy(temp_iv, iv, 16);
 
     if( mode == SM4_ENCRYPT )
     {
         while( length > 0 )
         {
             for( i = 0; i < 16; i++ )
-                output[i] = (unsigned char)( input[i] ^ iv[i] );
+                output[i] = (unsigned char)( input[i] ^ temp_iv[i] );
 
             sm4_one_round( ctx->sk, output, output );
-            memcpy( iv, output, 16 );
+            memcpy( temp_iv, output, 16 );
 
             input  += 16;
             output += 16;
@@ -332,9 +335,9 @@ void sm4_crypt_cbc( sm4_context *ctx,
             sm4_one_round( ctx->sk, input, output );
 
             for( i = 0; i < 16; i++ )
-                output[i] = (unsigned char)( output[i] ^ iv[i] );
+                output[i] = (unsigned char)( output[i] ^ temp_iv[i] );
 
-            memcpy( iv, temp, 16 );
+            memcpy( temp_iv, temp, 16 );
 
             input  += 16;
             output += 16;
